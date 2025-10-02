@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML 內容增強工具</title>
+    <!-- Chosen Palette: Calm Harmony (Stones, Teals) -->
+    <!-- Application Structure Plan: A two-column layout is used. The left column contains an accordion-based control panel for organized content input (Base HTML, Press Release, etc.), guiding the user through the process. The right column features a tabbed view for switching between a live visual preview (in an iframe) and the generated HTML code. This interactive structure provides immediate feedback and separates input from output, which is more intuitive for non-technical users than the original side-by-side code view. -->
+    <!-- Visualization & Content Choices: The primary "visualization" is a live, rendered preview of the final webpage within an iframe (Goal: Inform/Review, Method: HTML/JS, Interaction: Dynamic updates). This directly represents the output, which is the most effective feedback mechanism. User inputs are organized into collapsible accordion sections (Goal: Organize, Method: HTML/CSS/JS) to manage complexity. The final output is displayed in a formatted code block (Goal: Inform, Method: HTML/JS) for easy copying. No charts are needed; the focus is on content assembly and preview. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', '微軟正黑體', 'Microsoft JhengHei', sans-serif;
+            background-color: #f0f2f5;
+        }
+        details > summary {
+            list-style: none;
+            cursor: pointer;
+        }
+        details > summary::-webkit-details-marker {
+            display: none;
+        }
+        details[open] .arrow {
+            transform: rotate(90deg);
+        }
+        .arrow {
+            transition: transform 0.2s;
+        }
+        .tab-btn.active {
+            border-bottom-color: #0d9488;
+            color: #0d9488;
+        }
+        .tab-panel {
+            display: none;
+        }
+        .tab-panel.active {
+            display: block;
+        }
+        #outputCode {
+            scrollbar-width: thin;
+            scrollbar-color: #4a5568 #2d3748;
+        }
+        #outputCode::-webkit-scrollbar {
+            width: 8px;
+        }
+        #outputCode::-webkit-scrollbar-track {
+            background: #2d3748;
+        }
+        #outputCode::-webkit-scrollbar-thumb {
+            background-color: #4a5568;
+            border-radius: 10px;
+        }
+        #toast {
+            transition: opacity 0.3s, transform 0.3s;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800">
+    <div class="flex flex-col h-screen">
+        <header class="bg-white shadow-sm p-4 text-center">
+            <h1 class="text-2xl font-bold text-teal-700">HTML 內容增強工具</h1>
+            <p class="text-sm text-stone-500">將您的內容轉換為結構完整、樣式精美的網頁</p>
+        </header>
+
+        <main class="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 overflow-hidden">
+            <!-- Left: Control Panel -->
+            <div class="bg-white rounded-lg shadow p-4 flex flex-col overflow-y-auto">
+                <h2 class="text-lg font-semibold mb-4 border-b pb-2">1. 輸入內容</h2>
+                <div class="space-y-3 flex-1">
+                    <details class="border rounded-lg" open>
+                        <summary class="flex justify-between items-center p-3 bg-stone-100 rounded-t-lg">
+                            <span class="font-semibold"><i class="fas fa-code mr-2"></i>原始 HTML 程式碼</span>
+                            <i class="fas fa-chevron-right arrow"></i>
+                        </summary>
+                        <div class="p-3">
+                            <textarea id="originalHtml" class="w-full h-48 p-2 border rounded-md focus:ring-2 focus:ring-teal-500" placeholder="貼上您完整的 HTML 程式碼..."></textarea>
+                        </div>
+                    </details>
+                    <details class="border rounded-lg">
+                        <summary class="flex justify-between items-center p-3 bg-stone-100 rounded-t-lg">
+                            <span class="font-semibold"><i class="far fa-newspaper mr-2"></i>新聞稿文字</span>
+                            <i class="fas fa-chevron-right arrow"></i>
+                        </summary>
+                        <div class="p-3">
+                             <textarea id="pressReleaseText" class="w-full h-24 p-2 border rounded-md focus:ring-2 focus:ring-teal-500" placeholder="請輸入新聞稿內容..."></textarea>
+                        </div>
+                    </details>
+                    <details class="border rounded-lg">
+                        <summary class="flex justify-between items-center p-3 bg-stone-100 rounded-t-lg">
+                            <span class="font-semibold"><i class="far fa-images mr-2"></i>活動圖片連結</span>
+                            <i class="fas fa-chevron-right arrow"></i>
+                        </summary>
+                        <div class="p-3">
+                            <textarea id="imageLinks" class="w-full h-24 p-2 border rounded-md focus:ring-2 focus:ring-teal-500" placeholder="每個圖片連結一行..."></textarea>
+                        </div>
+                    </details>
+                     <details class="border rounded-lg">
+                        <summary class="flex justify-between items-center p-3 bg-stone-100 rounded-t-lg">
+                            <span class="font-semibold"><i class="fas fa-video mr-2"></i>活動影片連結 (YouTube/GDrive)</span>
+                            <i class="fas fa-chevron-right arrow"></i>
+                        </summary>
+                        <div class="p-3">
+                            <textarea id="videoLinks" class="w-full h-24 p-2 border rounded-md focus:ring-2 focus:ring-teal-500" placeholder="支援 YouTube 和 Google Drive，每個連結一行..."></textarea>
+                        </div>
+                    </details>
+                    <details class="border rounded-lg">
+                        <summary class="flex justify-between items-center p-3 bg-stone-100 rounded-t-lg">
+                            <span class="font-semibold"><i class="fas fa-puzzle-piece mr-2"></i>附加 HTML 內容</span>
+                             <i class="fas fa-chevron-right arrow"></i>
+                        </summary>
+                        <div class="p-3">
+                            <textarea id="additionalHtml" class="w-full h-24 p-2 border rounded-md focus:ring-2 focus:ring-teal-500" placeholder="貼上要附加到結尾的 HTML 程式碼..."></textarea>
+                        </div>
+                    </details>
+                </div>
+                 <div class="mt-4">
+                     <button id="generateBtn" class="w-full bg-teal-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-teal-700 transition duration-300 shadow-md">
+                        <i class="fas fa-sync-alt mr-2"></i>更新預覽與程式碼
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right: Preview/Output -->
+            <div class="bg-white rounded-lg shadow p-4 flex flex-col overflow-hidden">
+                <div class="flex border-b mb-2">
+                    <button class="tab-btn py-2 px-4 font-semibold border-b-2 border-transparent transition text-stone-500 active" data-tab="preview"><i class="fas fa-eye mr-2"></i>即時預覽</button>
+                    <button class="tab-btn py-2 px-4 font-semibold border-b-2 border-transparent transition text-stone-500" data-tab="code"><i class="fas fa-code mr-2"></i>產生程式碼</button>
+                </div>
+                <div class="flex-1 relative overflow-hidden">
+                    <div id="preview" class="tab-panel active w-full h-full">
+                        <iframe id="preview-iframe" class="w-full h-full border rounded-md" title="Live Preview"></iframe>
+                    </div>
+                    <div id="code" class="tab-panel w-full h-full">
+                         <pre class="h-full"><code id="outputCode" class="w-full h-full block text-sm bg-gray-800 text-white p-4 rounded-md overflow-auto"></code></pre>
+                    </div>
+                </div>
+                <div class="mt-4 flex space-x-2">
+                    <button id="copyBtn" class="flex-1 bg-stone-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-stone-600 transition"><i class="far fa-copy mr-2"></i>複製程式碼</button>
+                    <button id="downloadHtmlBtn" class="flex-1 bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition"><i class="fas fa-download mr-2"></i>下載檔案</button>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-5 py-2 rounded-lg shadow-lg opacity-0 translate-y-4"></div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const generateBtn = document.getElementById('generateBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const downloadHtmlBtn = document.getElementById('downloadHtmlBtn');
+        const toastEl = document.getElementById('toast');
+        const tabs = document.querySelectorAll('.tab-btn');
+        const tabPanels = document.querySelectorAll('.tab-panel');
+
+        const inputs = {
+            originalHtml: document.getElementById('originalHtml'),
+            pressReleaseText: document.getElementById('pressReleaseText'),
+            imageLinks: document.getElementById('imageLinks'),
+            videoLinks: document.getElementById('videoLinks'),
+            additionalHtml: document.getElementById('additionalHtml'),
+        };
+
+        const outputs = {
+            iframe: document.getElementById('preview-iframe'),
+            code: document.getElementById('outputCode'),
+        };
+
+        const showToast = (message) => {
+            toastEl.textContent = message;
+            toastEl.classList.remove('opacity-0', 'translate-y-4');
+            setTimeout(() => {
+                toastEl.classList.add('opacity-0', 'translate-y-4');
+            }, 3000);
+        };
+
+        const isValidUrl = (string) => {
+            try { new URL(string); return true; } catch (e) { return false; }
+        };
+
+        const getYouTubeId = (url) => {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        };
+
+        const getGoogleDriveId = (url) => {
+            let fileId = null;
+            const patterns = [
+                /drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/, 
+                /drive\.google\.com\/(?:open|uc)\?id=([a-zA-Z0-9_-]+)/
+            ];
+            for (const pattern of patterns) {
+                const match = url.match(pattern);
+                if (match && match[1]) {
+                    fileId = match[1];
+                    break; 
+                }
+            }
+            return fileId;
+        };
+        
+        const generateEnhancedHtml = () => {
+            const originalHtml = inputs.originalHtml.value.trim();
+            if (!originalHtml) {
+                showToast('請先提供原始 HTML 程式碼');
+                return null;
+            }
+
+            const parser = new DOMParser();
+            const userDoc = parser.parseFromString(originalHtml, 'text/html');
+            const newDoc = document.implementation.createHTMLDocument(userDoc.title || '增強頁面');
+            
+            newDoc.head.innerHTML = ''; 
+            newDoc.head.innerHTML += '<meta charset="UTF-8">\n';
+            newDoc.head.innerHTML += '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n';
+            
+            Array.from(userDoc.head.children).forEach(el => {
+                if (el.tagName.toLowerCase() !== 'meta' || (!el.hasAttribute('charset') && el.getAttribute('name') !== 'viewport')) {
+                    newDoc.head.appendChild(el.cloneNode(true));
+                }
+            });
+
+            const style = newDoc.createElement('style');
+            style.textContent = `
+                body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+                .content-section { width: 100%; box-sizing: border-box; padding: 40px 20px; }
+                .section-wrapper { max-width: 1200px; margin: 0 auto; }
+                .section-title { font-size: 1.75em; color: #343a40; border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 20px; }
+                .press-release-content p { line-height: 1.8; color: #495057; margin-bottom: 1em; text-align: justify; }
+                .gallery, .video-gallery { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
+                .gallery-item { flex: 0 1 280px; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.1); text-align: center; background-color: #fff; padding-bottom: 10px; }
+                .gallery-item img { width: 100%; height: 200px; object-fit: cover; }
+                .gallery-item a { display: inline-block; margin-top: 10px; padding: 8px 15px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px; }
+                .video-wrapper { flex: 1 1 320px; max-width: 500px; position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+                .video-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+                .bg-light-gray { background-color: #f8f9fa; }
+            `;
+            newDoc.head.appendChild(style);
+
+            const newBody = newDoc.body;
+            while (userDoc.body.firstChild) {
+                newBody.appendChild(userDoc.body.firstChild);
+            }
+
+            const pressReleaseText = inputs.pressReleaseText.value.trim();
+            if (pressReleaseText) {
+                const section = newDoc.createElement('div');
+                section.className = 'content-section bg-light-gray';
+                let contentHtml = '<div class="section-wrapper"><h2 class="section-title">新聞稿</h2><div class="press-release-content">';
+                pressReleaseText.split('\n').forEach(p => {
+                    if (p.trim()) contentHtml += `<p>${p.trim()}</p>`;
+                });
+                contentHtml += '</div></div>';
+                section.innerHTML = contentHtml;
+                newBody.appendChild(section);
+            }
+            
+            const imageLinks = inputs.imageLinks.value.trim();
+            if (imageLinks) {
+                const section = newDoc.createElement('div');
+                section.className = 'content-section';
+                let contentHtml = '<div class="section-wrapper"><h2 class="section-title">活動精彩回顧</h2><div class="gallery">';
+                imageLinks.split('\n').filter(link => isValidUrl(link.trim())).forEach(link => {
+                    const trimmedLink = link.trim();
+                    contentHtml += `<div class="gallery-item"><img src="${trimmedLink}" alt="活動圖片"><a href="${trimmedLink}" download>下載圖片</a></div>`;
+                });
+                contentHtml += '</div></div>';
+                section.innerHTML = contentHtml;
+                newBody.appendChild(section);
+            }
+
+            const videoLinks = inputs.videoLinks.value.trim();
+            if (videoLinks) {
+                const section = newDoc.createElement('div');
+                section.className = 'content-section bg-light-gray';
+                let contentHtml = '<div class="section-wrapper"><h2 class="section-title">活動精彩影片</h2><div class="video-gallery">';
+                videoLinks.split('\n').filter(link => isValidUrl(link.trim())).forEach(link => {
+                    const trimmedLink = link.trim();
+                    const youtubeId = getYouTubeId(trimmedLink);
+                    const googleDriveId = getGoogleDriveId(trimmedLink);
+                    if (youtubeId) {
+                        contentHtml += `<div class="video-wrapper"><iframe src="https://www.youtube.com/embed/${youtubeId}" title="YouTube video player" frameborder="0" allowfullscreen></iframe></div>`;
+                    } else if (googleDriveId) {
+                        contentHtml += `<div class="video-wrapper"><iframe src="https://drive.google.com/file/d/${googleDriveId}/preview" title="Google Drive video player" frameborder="0" allowfullscreen></iframe></div>`;
+                    }
+                });
+                contentHtml += '</div></div>';
+                section.innerHTML = contentHtml;
+                newBody.appendChild(section);
+            }
+
+            const additionalHtml = inputs.additionalHtml.value.trim();
+            if (additionalHtml) {
+                const section = newDoc.createElement('div');
+                section.className = 'content-section';
+                section.innerHTML = `<div class="section-wrapper">${additionalHtml}</div>`;
+                newBody.appendChild(section);
+            }
+            
+            return '<!DOCTYPE html>\n' + newDoc.documentElement.outerHTML;
+        };
+
+        const updatePreviewAndCode = () => {
+            const finalHtml = generateEnhancedHtml();
+            if (finalHtml) {
+                outputs.iframe.srcdoc = finalHtml;
+                outputs.code.textContent = finalHtml;
+                showToast('預覽與程式碼已更新！');
+            }
+        };
+
+        generateBtn.addEventListener('click', updatePreviewAndCode);
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                tabPanels.forEach(p => p.classList.remove('active'));
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            });
+        });
+
+        copyBtn.addEventListener('click', () => {
+            const codeToCopy = outputs.code.textContent;
+            if (!codeToCopy) {
+                showToast('沒有可複製的程式碼。');
+                return;
+            }
+            const textArea = document.createElement("textarea");
+            textArea.value = codeToCopy;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showToast('程式碼已複製！');
+            } catch (err) {
+                showToast('複製失敗。');
+            }
+            document.body.removeChild(textArea);
+        });
+
+        downloadHtmlBtn.addEventListener('click', () => {
+            const code = outputs.code.textContent;
+            if (!code) {
+                showToast('沒有可下載的程式碼。');
+                return;
+            }
+            const blob = new Blob([code], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'enhanced-page.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+        
+        // Initial generation on load
+        updatePreviewAndCode();
+    });
+    </script>
+</body>
+</html>
